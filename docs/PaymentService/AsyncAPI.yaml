@@ -1,0 +1,66 @@
+asyncapi: 3.0.0
+info:
+  title: Payment Service AsyncAPI
+  version: 1.0.0
+  description: >-
+    Asynchronous messaging specification for Payment Service interactions with
+    other microservices via RabbitMQ.
+servers:
+  rabbitmq:
+    host: 'rabbitmq:5672'
+    protocol: amqp
+    description: RabbitMQ message broker for asynchronous communication
+channels:
+  payment.success:
+    address: payment.success
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/PaymentSuccessMessage'
+  payment.failed:
+    address: payment.failed
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/PaymentFailedMessage'
+operations:
+  payment.success.publish:
+    action: send
+    channel:
+      $ref: '#/channels/payment.success'
+    summary: Notify Order Service of successful payment
+    description: Sent to Order Service when a payment is successful.
+    messages:
+      - $ref: '#/channels/payment.success/messages/publish.message'
+  payment.failed.publish:
+    action: send
+    channel:
+      $ref: '#/channels/payment.failed'
+    summary: Notify Order Service of payment failure
+    description: Sent to Order Service when a payment fails.
+    messages:
+      - $ref: '#/channels/payment.failed/messages/publish.message'
+components:
+  schemas:
+    PaymentSuccessMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+      required:
+        - orderId
+    PaymentFailedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        reason:
+          type: string
+          description: 'Reason for payment failure (e.g., "Insufficient funds")'
+      required:
+        - orderId
+        - reason

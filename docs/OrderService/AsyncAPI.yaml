@@ -1,0 +1,247 @@
+asyncapi: 3.0.0
+info:
+  title: Order Service AsyncAPI
+  version: 1.0.0
+  description: >-
+    Asynchronous messaging specification for Order Service interactions with
+    other microservices via RabbitMQ.
+servers:
+  rabbitmq:
+    host: 'rabbitmq:5672'
+    protocol: amqp
+    description: RabbitMQ message broker for asynchronous communication
+channels:
+  order.created:
+    address: order.created
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/OrderCreatedMessage'
+  inventory.reserved:
+    address: inventory.reserved
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/InventoryReservedMessage'
+  inventory.failed:
+    address: inventory.failed
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/InventoryFailedMessage'
+  inventory.release:
+    address: inventory.release
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/InventoryReleaseMessage'
+  payment.success:
+    address: payment.success
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/PaymentSuccessMessage'
+  payment.failed:
+    address: payment.failed
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/PaymentFailedMessage'
+  notify.order.confirmation:
+    address: notify.order.confirmation
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/NotifyConfirmationMessage'
+  notify.order.status:
+    address: notify.order.status
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/NotifyStatusMessage'
+operations:
+  order.created.publish:
+    action: send
+    channel:
+      $ref: '#/channels/order.created'
+    summary: Notify Inventory Service to reserve products
+    description: Sent when a new order is created to request product reservation.
+    messages:
+      - $ref: '#/channels/order.created/messages/publish.message'
+  inventory.reserved.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/inventory.reserved'
+    summary: Receive confirmation of product reservation
+    description: Received from Inventory Service when products are successfully reserved.
+    messages:
+      - $ref: '#/channels/inventory.reserved/messages/subscribe.message'
+  inventory.failed.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/inventory.failed'
+    summary: Receive notification of reservation failure
+    description: >-
+      Received from Inventory Service when product reservation fails due to
+      insufficient stock.
+    messages:
+      - $ref: '#/channels/inventory.failed/messages/subscribe.message'
+  inventory.release.publish:
+    action: send
+    channel:
+      $ref: '#/channels/inventory.release'
+    summary: Notify Inventory Service to release products
+    description: >-
+      Sent when an order is cancelled or payment fails to release reserved
+      products.
+    messages:
+      - $ref: '#/channels/inventory.release/messages/publish.message'
+  payment.success.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/payment.success'
+    summary: Receive confirmation of successful payment
+    description: Received from Payment Service when payment is successful.
+    messages:
+      - $ref: '#/channels/payment.success/messages/subscribe.message'
+  payment.failed.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/payment.failed'
+    summary: Receive notification of payment failure
+    description: Received from Payment Service when payment fails.
+    messages:
+      - $ref: '#/channels/payment.failed/messages/subscribe.message'
+  notify.order.confirmation.publish:
+    action: send
+    channel:
+      $ref: '#/channels/notify.order.confirmation'
+    summary: Request Notification Service to send confirmation link
+    description: >-
+      Sent to Notification Service to send an email confirmation link after
+      products are reserved.
+    messages:
+      - $ref: '#/channels/notify.order.confirmation/messages/publish.message'
+  notify.order.status.publish:
+    action: send
+    channel:
+      $ref: '#/channels/notify.order.status'
+    summary: Notify Notification Service of order status update
+    description: >-
+      Sent to Notification Service to inform the customer of order status
+      changes (e.g., cancelled, completed).
+    messages:
+      - $ref: '#/channels/notify.order.status/messages/publish.message'
+components:
+  schemas:
+    OrderCreatedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        orderItems:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              quantity:
+                type: integer
+      required:
+        - orderId
+        - orderItems
+    InventoryReservedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+      required:
+        - orderId
+    InventoryFailedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+      required:
+        - orderId
+    InventoryReleaseMessage:
+      type: object
+      properties:
+        orderItems:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              quantity:
+                type: integer
+      required:
+        - orderItems
+    PaymentSuccessMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+      required:
+        - orderId
+    PaymentFailedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        reason:
+          type: string
+          description: 'Reason for payment failure (e.g., "Insufficient funds")'
+      required:
+        - orderId
+    NotifyConfirmationMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        totalAmount:
+          type: number
+          format: double
+        customerEmail:
+          type: string
+          format: email
+        confirmationLink:
+          type: string
+          description: URL for confirming the order
+      required:
+        - orderId
+        - totalAmount
+        - customerEmail
+        - confirmationLink
+    NotifyStatusMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        customerEmail:
+          type: string
+          format: email
+        status:
+          type: string
+          enum:
+            - FAILED
+            - COMPLETED
+        reason:
+          type: string
+          description: >-
+            Reason for status change (e.g., "Insufficient stock", "Payment
+            failed")
+      required:
+        - orderId
+        - customerEmail
+        - status

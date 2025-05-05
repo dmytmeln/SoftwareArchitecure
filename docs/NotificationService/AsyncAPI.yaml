@@ -1,0 +1,82 @@
+# AsyncAPI Specification for Notification Service
+asyncapi: 3.0.0
+info:
+  title: Notification Service AsyncAPI
+  version: 1.0.0
+  description: Asynchronous messaging specification for Notification Service interactions with other microservices via RabbitMQ.
+servers:
+  rabbitmq:
+    host: 'rabbitmq:5672'
+    protocol: amqp
+    description: RabbitMQ message broker for asynchronous communication
+channels:
+  notify.order.confirmation:
+    address: notify.order.confirmation
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/NotifyConfirmationMessage'
+  notify.order.status:
+    address: notify.order.status
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/NotifyStatusMessage'
+operations:
+  notify.order.confirmation.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/notify.order.confirmation'
+    summary: Receive request to send order confirmation email
+    description: Received from Order Service to send an email confirmation link to the customer after products are reserved.
+    messages:
+      - $ref: '#/channels/notify.order.confirmation/messages/subscribe.message'
+  notify.order.status.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/notify.order.status'
+    summary: Receive request to send order status update email
+    description: Received from Order Service to send an email notifying the customer of order status changes (e.g., failed, completed).
+    messages:
+      - $ref: '#/channels/notify.order.status/messages/subscribe.message'
+components:
+  schemas:
+    NotifyConfirmationMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        totalAmount:
+          type: number
+          format: double
+        customerEmail:
+          type: string
+          format: email
+        confirmationLink:
+          type: string
+          description: URL for confirming the order
+      required:
+        - orderId
+        - totalAmount
+        - customerEmail
+        - confirmationLink
+    NotifyStatusMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        customerEmail:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [FAILED, CANCELLED, COMPLETED]
+        reason:
+          type: string
+          description: Reason for status change (e.g., "Insufficient stock", "Payment failed")
+      required:
+        - orderId
+        - customerEmail
+        - status

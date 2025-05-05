@@ -1,0 +1,131 @@
+asyncapi: 3.0.0
+info:
+  title: Inventory Service AsyncAPI
+  version: 1.0.0
+  description: >-
+    Asynchronous messaging specification for Inventory Service interactions with
+    other microservices via RabbitMQ.
+servers:
+  rabbitmq:
+    host: 'rabbitmq:5672'
+    protocol: amqp
+    description: RabbitMQ message broker for asynchronous communication
+channels:
+  order.created:
+    address: order.created
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/OrderCreatedMessage'
+  inventory.reserved:
+    address: inventory.reserved
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/InventoryReservedMessage'
+  inventory.failed:
+    address: inventory.failed
+    messages:
+      publish.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/InventoryFailedMessage'
+  inventory.release:
+    address: inventory.release
+    messages:
+      subscribe.message:
+        contentType: application/json
+        payload:
+          $ref: '#/components/schemas/InventoryReleaseMessage'
+operations:
+  order.created.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/order.created'
+    summary: Receive request to reserve products for an order
+    description: >-
+      Received from Order Service when a new order is created to request product
+      reservation.
+    messages:
+      - $ref: '#/channels/order.created/messages/subscribe.message'
+  inventory.reserved.publish:
+    action: send
+    channel:
+      $ref: '#/channels/inventory.reserved'
+    summary: Notify Order Service of successful product reservation
+    description: Sent to Order Service when products are successfully reserved.
+    messages:
+      - $ref: '#/channels/inventory.reserved/messages/publish.message'
+  inventory.failed.publish:
+    action: send
+    channel:
+      $ref: '#/channels/inventory.failed'
+    summary: Notify Order Service of reservation failure
+    description: >-
+      Sent to Order Service when product reservation fails due to insufficient
+      stock.
+    messages:
+      - $ref: '#/channels/inventory.failed/messages/publish.message'
+  inventory.release.subscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/inventory.release'
+    summary: Receive request to release reserved products
+    description: >-
+      Received from Order Service when an order is cancelled or fails to release
+      reserved products.
+    messages:
+      - $ref: '#/channels/inventory.release/messages/subscribe.message'
+components:
+  schemas:
+    OrderCreatedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              quantity:
+                type: integer
+      required:
+        - orderId
+        - items
+    InventoryReservedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+      required:
+        - orderId
+    InventoryFailedMessage:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        reason:
+          type: string
+          description: 'Reason for failure (e.g., "Insufficient stock")'
+      required:
+        - orderId
+    InventoryReleaseMessage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              quantity:
+                type: integer
+      required:
+        - items
