@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrderDetails'
+                $ref: '#/components/schemas/Order'
         '400':
           description: Invalid request (e.g., empty cart)
         '401':
@@ -67,7 +67,7 @@ paths:
             content:
               application/json:
                 schema:
-                  $ref: '#/components/schemas/OrderDetails'
+                  $ref: '#/components/schemas/Order'
           '401':
             description: Unauthorized
           '404': 
@@ -128,7 +128,7 @@ paths:
           description: Unauthorized
       security:
         - BearerAuth: []
-  /cart:
+  /carts:
     get:
       summary: Get user cart
       description: Retrieves the customer's shopping cart contents.
@@ -264,12 +264,7 @@ components:
         updatedAt:
           type: string
           format: date-time
-    OrderDetails:
-      type: object
-      properties:
-        order:
-          $ref: '#/components/schemas/Order'
-        items:
+        orderItems:
           type: array
           items:
             $ref: '#/components/schemas/OrderItem'
