@@ -68,6 +68,8 @@ paths:
               application/json:
                 schema:
                   $ref: '#/components/schemas/Order'
+          '400':
+            description: Order doesn't belong to user
           '401':
             description: Unauthorized
           '404': 
