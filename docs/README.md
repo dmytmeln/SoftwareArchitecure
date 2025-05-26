@@ -20,7 +20,7 @@
 ## Payment Service
 
 ### [OpenAPI](PaymentService/OpenAPI.yaml)
-![alt-text](PaymentService/openAPI.png)
+![alt-text](PaymentService/openapi.png)
 ### [AsyncAPI](PaymentService/AsyncAPI.yaml)
 ![alt-text](PaymentService/asyncAPI.png)
 
