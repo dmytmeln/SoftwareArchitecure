@@ -1,0 +1,3 @@
+rootProject.name = 'SoftwareArchitecture'
+include 'config-server', 'discovery-server', 'gateway', 'order-service', 'inventory-service', 'auth-service',
+        'notification-service', 'payment-service'

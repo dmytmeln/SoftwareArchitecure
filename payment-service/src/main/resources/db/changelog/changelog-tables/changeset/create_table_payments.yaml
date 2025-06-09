@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: create_table_payments
+      author: Dmytro Melnyk
+      changes:
+        - createTable:
+            tableName: payments
+            columns:
+              - column:
+                  name: payment_id
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: payments_pk
+              - column:
+                  name: order_id
+                  type: integer
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: payments_order_id_uq
+              - column:
+                  name: amount
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false

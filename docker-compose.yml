@@ -1,0 +1,368 @@
+services:
+
+  nginx:
+    build: nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      gateway:
+        condition: service_healthy
+    networks:
+      - app
+
+
+  config-server:
+    build: config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - app
+    environment:
+      - GIT_URL=${GIT_URL}
+      - GIT_USERNAME=${GIT_USERNAME}
+      - GIT_PASSWORD=${GIT_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8888" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  discovery-server:
+    build: discovery-server
+    container_name: discovery-server
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+    networks:
+      - app
+    ports:
+      - "8761:8761"
+    depends_on:
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8761" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  gateway:
+    build: gateway
+    networks:
+      - app
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+      - DISCOVERY_SERVER=${DISCOVERY_SERVER}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+
+  order-service:
+    build: order-service
+    container_name: order-service
+    ports:
+      - "8081:8080"
+    networks:
+      - app
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+      - DISCOVERY_SERVER=${DISCOVERY_SERVER}
+      - ORDER_SERVICE_DB_URL=jdbc:postgresql://order-service-db:5432/postgres
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      order-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  inventory-service:
+    build: inventory-service
+    container_name: inventory-service
+    ports:
+      - "8082:8080"
+    networks:
+      - app
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+      - DISCOVERY_SERVER=${DISCOVERY_SERVER}
+      - INVENTORY_SERVICE_DB_URL=jdbc:postgresql://inventory-service-db:5432/postgres
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      inventory-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  auth-service:
+    build: auth-service
+    container_name: auth-service
+    ports:
+      - "8083:8080"
+    networks:
+      - app
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+      - DISCOVERY_SERVER=${DISCOVERY_SERVER}
+      - AUTH_SERVICE_DB_URL=jdbc:postgresql://auth-service-db:5432/postgres
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      auth-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  payment-service:
+    build: payment-service
+    container_name: payment-service
+    ports:
+      - "8084:8080"
+    networks:
+      - app
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+      - DISCOVERY_SERVER=${DISCOVERY_SERVER}
+      - PAYMENT_SERVICE_DB_URL=jdbc:postgresql://payment-service-db:5432/postgres
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_API_SECRET=${STRIPE_API_SECRET}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      payment-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  notification-service:
+    build: notification-service
+    container_name: notification-service
+    ports:
+      - "8085:8080"
+    networks:
+      - app
+    environment:
+      - CONFIG_SERVER=${CONFIG_SERVER}
+      - DISCOVERY_SERVER=${DISCOVERY_SERVER}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      notification-service-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  order-service-db:
+    image: postgres
+    container_name: order-service-db
+    ports:
+      - "5432:5432"
+    networks:
+      - app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - order-service-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  inventory-service-db:
+    image: postgres
+    container_name: inventory-service-db
+    ports:
+      - "5433:5432"
+    networks:
+      - app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - inventory-service-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  auth-service-db:
+    image: postgres
+    container_name: auth-service-db
+    ports:
+      - "5434:5432"
+    networks:
+      - app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - auth-service-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  payment-service-db:
+    image: postgres
+    container_name: payment-service-db
+    ports:
+      - "5435:5432"
+    networks:
+      - app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - payment-service-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  notification-service-db:
+    image: postgres
+    container_name: notification-service-db
+    ports:
+      - "5465:5432"
+    networks:
+      - app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - notification-service-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - app
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+
+volumes:
+  order-service-data:
+    driver: local
+  inventory-service-data:
+    driver: local
+  auth-service-data:
+    driver: local
+  payment-service-data:
+    driver: local
+  notification-service-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+
+
+networks:
+  app:
+    driver: bridge

@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: create_table_cart_items
+      author: Dmytro Melnyk
+      changes:
+        - createTable:
+            tableName: cart_items
+            columns:
+              - column:
+                  name: user_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: smallint
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: cart_items
+            columnNames: user_id, product_id
+            constraintName: cart_items_pk

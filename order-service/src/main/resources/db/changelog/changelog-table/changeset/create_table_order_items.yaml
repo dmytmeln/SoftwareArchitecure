@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: create_table_order_items
+      author: Dmytro Melnyk
+      changes:
+        - createTable:
+            tableName: order_items
+            columns:
+              - column:
+                  name: order_item_id
+                  type: serial
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: order_items_pk
+              - column:
+                  name: order_id
+                  type: integer
+                  constraints:
+                    nullable: false
+                    foreignKeyName: order_items_orders_fk
+                    referencedColumnNames: order_id
+                    referencedTableName: orders
+              - column:
+                  name: product_id
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: smallint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit_price
+                  type: integer
+                  constraints:
+                    nullable: false
