@@ -1,5 +1,6 @@
 package com.example.payment_service.service;
 
+import com.example.payment_service.config.db.ReadOnly;
 import com.example.payment_service.domain.Payment;
 import com.example.payment_service.domain.PaymentStatus;
 import com.example.payment_service.dto.PaymentDto;
@@ -9,6 +10,8 @@ import com.example.payment_service.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
@@ -17,7 +20,13 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper mapper;
 
     @Override
-    public PaymentDto createPayment(Integer orderId, Integer amount) {
+    @ReadOnly
+    public List<PaymentDto> getAll() {
+        return mapper.toDto(repository.findAll());
+    }
+
+    @Override
+    public PaymentDto create(Integer orderId, Integer amount) {
         var payment = Payment.builder()
                 .orderId(orderId)
                 .amount(amount)
@@ -41,6 +50,7 @@ public class PaymentServiceImpl implements PaymentService {
         return mapper.toDto(repository.save(payment));
     }
 
+    @ReadOnly
     private Payment getExistingById(Integer paymentId) {
         return repository.findById(paymentId)
                 .orElseThrow(() -> new NotFoundException(String.format("Payment with id %s not found", paymentId)));

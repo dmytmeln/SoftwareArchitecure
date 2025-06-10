@@ -1,5 +1,6 @@
 package com.example.inventory_service.service;
 
+import com.example.inventory_service.config.db.ReadOnly;
 import com.example.inventory_service.domain.Product;
 import com.example.inventory_service.dto.InventoryDto;
 import com.example.inventory_service.dto.ProductRequest;
@@ -26,10 +27,12 @@ public class InventoryService {
     private final ProductMapper productMapper;
     private final InventoryMapper inventoryMapper;
 
+    @ReadOnly
     public List<ProductResponse> getAll() {
         return productMapper.toResponse(productRepository.findAll());
     }
 
+    @ReadOnly
     public List<InventoryDto> getInventory() {
         return inventoryMapper.toDto(productRepository.findAll());
     }
@@ -40,6 +43,7 @@ public class InventoryService {
         return productMapper.toResponse(productRepository.save(entity));
     }
 
+    @ReadOnly
     public ProductResponse getById(Integer productId) {
         return productMapper.toResponse(getExisting(productId));
     }

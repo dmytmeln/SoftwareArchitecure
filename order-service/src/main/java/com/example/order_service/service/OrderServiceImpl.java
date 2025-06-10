@@ -1,5 +1,6 @@
 package com.example.order_service.service;
 
+import com.example.order_service.config.db.ReadOnly;
 import com.example.order_service.domain.Order;
 import com.example.order_service.domain.OrderItem;
 import com.example.order_service.domain.OrderStatus;
@@ -25,6 +26,7 @@ public class OrderServiceImpl implements OrderService {
     private final CartService cartService;
 
     @Override
+    @ReadOnly
     public List<OrderDto> getAllByUserId(Integer userId) {
         return mapper.toDto(orderRepository.findAllByUserId(userId));
     }
@@ -44,6 +46,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @ReadOnly
     public OrderDto getById(Integer orderId, Integer userId) {
         var order = getExistingById(orderId);
         verifyBelongsToUser(order, userId);
@@ -110,6 +113,7 @@ public class OrderServiceImpl implements OrderService {
         return mapper.toDto(orderRepository.save(order));
     }
 
+    @ReadOnly
     private Order getExistingById(Integer orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));

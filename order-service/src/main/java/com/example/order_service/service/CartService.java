@@ -1,6 +1,7 @@
 package com.example.order_service.service;
 
 import com.example.order_service.client.ProductClient;
+import com.example.order_service.config.db.ReadOnly;
 import com.example.order_service.domain.CartItem;
 import com.example.order_service.domain.CartItemId;
 import com.example.order_service.dto.CartItemDto;
@@ -22,6 +23,7 @@ public class CartService {
     private final CartItemRepository repository;
     private final ProductClient productClient;
 
+    @ReadOnly
     public List<CartItemDto> getUserCartItems(Integer userId) {
         var cartItemDtos = repository.findAllByIdUserId(userId).stream()
                 .map(c -> new CartItemDto(
@@ -66,17 +68,20 @@ public class CartService {
         }
     }
 
+    @ReadOnly
     private CartItem getExisting(Integer productId, Integer userId) {
         return repository.findById(new CartItemId(userId, productId))
                 .orElseThrow(() -> new NotFoundException("Product is not in the cart"));
     }
 
+    @ReadOnly
     private void verifyExists(Integer productId, Integer userId) {
         if (!repository.existsById(new CartItemId(userId, productId))) {
             throw new NotFoundException("Product is not in the cart");
         }
     }
 
+    @ReadOnly
     private void verifyDoesntExist(Integer productId, Integer userId) {
         if (repository.existsById(new CartItemId(userId, productId))) {
             throw new BadRequestException("Product already added");

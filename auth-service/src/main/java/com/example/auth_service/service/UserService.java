@@ -1,5 +1,6 @@
 package com.example.auth_service.service;
 
+import com.example.auth_service.config.db.ReadOnly;
 import com.example.auth_service.domain.User;
 import com.example.auth_service.dto.RegisterRequest;
 import com.example.auth_service.dto.UpdatedUserRequest;
@@ -21,6 +22,7 @@ public class UserService {
     private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
 
+    @ReadOnly
     public UserResponse getById(Integer id) {
         return mapper.toResponse(getExisting(id));
     }
@@ -32,6 +34,7 @@ public class UserService {
         return mapper.toResponse(repository.save(user));
     }
 
+    @ReadOnly
     public User findByEmail(String email) {
         return repository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -48,6 +51,7 @@ public class UserService {
         return mapper.toResponse(updatedUser);
     }
 
+    @ReadOnly
     private User getExisting(Integer id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));

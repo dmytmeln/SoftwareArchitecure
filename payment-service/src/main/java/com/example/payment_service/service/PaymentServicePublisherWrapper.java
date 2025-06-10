@@ -6,6 +6,8 @@ import com.example.payment_service.publisher.RabbitPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentServicePublisherWrapper implements PaymentService {
@@ -14,8 +16,13 @@ public class PaymentServicePublisherWrapper implements PaymentService {
     private final RabbitPublisher rabbitPublisher;
 
     @Override
-    public PaymentDto createPayment(Integer orderId, Integer amount) {
-        return paymentServiceImpl.createPayment(orderId, amount);
+    public List<PaymentDto> getAll() {
+        return paymentServiceImpl.getAll();
+    }
+
+    @Override
+    public PaymentDto create(Integer orderId, Integer amount) {
+        return paymentServiceImpl.create(orderId, amount);
     }
 
     @Override

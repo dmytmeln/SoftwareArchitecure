@@ -37,7 +37,7 @@ public class StripeService {
     }
 
     public PaymentIntent createPaymentIntent(Integer orderId, Integer amount) {
-        var payment = paymentServicePublisherWrapper.createPayment(orderId, amount);
+        var payment = paymentServicePublisherWrapper.create(orderId, amount);
 
         var metadata = Map.of(
                 "orderId", orderId.toString(),
